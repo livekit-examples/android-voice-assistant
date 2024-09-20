@@ -9,6 +9,7 @@ espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.8.4"
 activityCompose = "1.9.1"
 composeBom = "2023.08.00"
+noise = "2.0.0"
 
 [libraries]
 androidx-constraintlayout-compose = { module = "androidx.constraintlayout:constraintlayout-compose", version.ref = "constraintlayoutCompose" }
@@ -28,6 +29,7 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 livekit-lib = { group = "io.livekit", name = "livekit-android", version = "2.8.1" }
 livekit-components = { group = "io.livekit", name = "livekit-android-compose-components", version = "1.2.0-20240912.154146-2" }
+noise = { module = "com.github.paramsen:noise", version.ref = "noise" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

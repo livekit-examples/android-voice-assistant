@@ -32,7 +32,7 @@ import io.livekit.android.compose.state.transcriptions.rememberTranscriptions
 import io.livekit.android.example.voiceassistant.audio.LocalAudioTrackFlow
 import io.livekit.android.example.voiceassistant.state.AssistantState
 import io.livekit.android.example.voiceassistant.state.rememberAssistantState
-import io.livekit.android.example.voiceassistant.ui.RemoteAudioTrackBarVisualizer
+import io.livekit.android.example.voiceassistant.ui.FFTRemoteAudioTrackBarVisualizer
 import io.livekit.android.example.voiceassistant.ui.UserTranscription
 import io.livekit.android.example.voiceassistant.ui.theme.LiveKitVoiceAssistantExampleTheme
 import io.livekit.android.room.track.Track
@@ -94,7 +94,7 @@ fun VoiceAssistant(modifier: Modifier = Modifier) {
             }
 
             // Amplitude visualization of the Assistant's voice track.
-            RemoteAudioTrackBarVisualizer(
+            FFTRemoteAudioTrackBarVisualizer(
                 audioTrackRef = remoteTrackRef,
                 modifier = Modifier
                     .padding(8.dp)
