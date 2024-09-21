@@ -2,6 +2,7 @@
 
 package io.livekit.android.example.voiceassistant
 
+import android.media.AudioTrack
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,6 +16,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,8 +38,12 @@ import io.livekit.android.example.voiceassistant.state.rememberAssistantState
 import io.livekit.android.example.voiceassistant.ui.FFTRemoteAudioTrackBarVisualizer
 import io.livekit.android.example.voiceassistant.ui.UserTranscription
 import io.livekit.android.example.voiceassistant.ui.theme.LiveKitVoiceAssistantExampleTheme
+import io.livekit.android.example.voiceassistant.ui.visualizer.AndroidVisualizer
+import io.livekit.android.room.Room
 import io.livekit.android.room.track.Track
+import io.livekit.android.util.LKLog
 import io.livekit.android.util.LoggingLevel
+import livekit.org.webrtc.audio.JavaAudioDeviceModule
 
 // Replace these values with your url and generated token.
 const val wsURL = "ws://192.168.11.2:7880"
@@ -61,12 +68,40 @@ class MainActivity : ComponentActivity() {
 fun VoiceAssistant(modifier: Modifier = Modifier) {
     ConstraintLayout(modifier = modifier) {
         // Setup listening to the local microphone if needed.
+        val rr = remember { mutableStateOf<Room?>(null) }
         val localAudioFlow = remember { LocalAudioTrackFlow() }
+        val audioSessionId = remember { mutableIntStateOf(-1) }
         val overrides = remember {
             LiveKitOverrides(
                 audioOptions = AudioOptions(
                     javaAudioDeviceModuleCustomizer = { builder ->
                         builder.setSamplesReadyCallback(localAudioFlow)
+                        builder.setAudioTrackStateCallback(object : JavaAudioDeviceModule.AudioTrackStateCallback {
+                            override fun onWebRtcAudioTrackStart() {
+                                val r = rr.value ?: return
+
+                                val audioModuleField = Room::class.java.getDeclaredField("audioDeviceModule")
+                                audioModuleField.isAccessible = true
+                                val audioModule = audioModuleField.get(r) as JavaAudioDeviceModule
+
+                                val audioOutputField = JavaAudioDeviceModule::class.java.getDeclaredField("audioOutput")
+                                audioOutputField.isAccessible = true
+                                val audioOutput = audioOutputField.get(audioModule)
+
+                                val webrtcAudioTrackClass = Class.forName("livekit.org.webrtc.audio.WebRtcAudioTrack")
+                                val audioTrackField = webrtcAudioTrackClass.getDeclaredField("audioTrack")
+                                audioTrackField.isAccessible = true
+                                val audioTrack = audioTrackField.get(audioOutput) as? AudioTrack
+
+                                LKLog.e { "audiotrack: $audioTrack" }
+                                LKLog.e { "session: ${audioTrack?.audioSessionId}" }
+                                audioSessionId.intValue = audioTrack?.audioSessionId ?: -1
+                            }
+
+                            override fun onWebRtcAudioTrackStop() {
+                                audioSessionId.intValue = -1
+                            }
+                        })
                     }
                 )
             )
@@ -79,7 +114,12 @@ fun VoiceAssistant(modifier: Modifier = Modifier) {
             connect = true,
             liveKitOverrides = overrides
         ) { room ->
-            val (audioVisualizer, chatLog) = createRefs()
+
+            LaunchedEffect(key1 = room) {
+                rr.value = room
+            }
+
+            val (audioVisualizer, androidVisualizer, chatLog) = createRefs()
             val trackRefs = rememberTracks(sources = listOf(Track.Source.MICROPHONE))
             val remoteTrackRef = trackRefs.firstOrNull { it.participant != room.localParticipant }
 
@@ -100,12 +140,26 @@ fun VoiceAssistant(modifier: Modifier = Modifier) {
                     .padding(8.dp)
                     .fillMaxWidth()
                     .constrainAs(audioVisualizer) {
-                        height = Dimension.percent(0.1f)
-                        width = Dimension.fillToConstraints
 
                         top.linkTo(parent.top)
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
+                        height = Dimension.percent(0.1f)
+                        width = Dimension.fillToConstraints
+                    }
+            )
+
+            AndroidVisualizer(
+                audioSessionId = audioSessionId.intValue,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth()
+                    .constrainAs(androidVisualizer) {
+                        top.linkTo(audioVisualizer.bottom)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                        height = Dimension.percent(0.1f)
+                        width = Dimension.fillToConstraints
                     }
             )
 
@@ -122,7 +176,7 @@ fun VoiceAssistant(modifier: Modifier = Modifier) {
                         bottom.linkTo(parent.bottom)
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
-                        height = Dimension.percent(0.9f)
+                        height = Dimension.percent(0.8f)
                         width = Dimension.fillToConstraints
                     }
             ) {

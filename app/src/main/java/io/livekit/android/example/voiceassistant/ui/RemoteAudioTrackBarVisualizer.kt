@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import io.livekit.android.compose.types.TrackReference
 import io.livekit.android.example.voiceassistant.audio.AudioTrackSinkFlow
 import io.livekit.android.room.track.RemoteAudioTrack
+import io.livekit.android.util.LKLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
@@ -28,6 +29,7 @@ private const val MIN_VOLUME = MAX_VOLUME * MIN_AMPLITUDE
 
 @Composable
 fun RemoteAudioTrackBarVisualizer(audioTrackRef: TrackReference?, modifier: Modifier = Modifier) {
+    LKLog.e { "recomp" }
     val amplitudes = remember {
         val emptyInts = Array(NUM_BARS) { 0.05f }
         mutableStateListOf(*emptyInts)
@@ -49,6 +51,7 @@ fun RemoteAudioTrackBarVisualizer(audioTrackRef: TrackReference?, modifier: Modi
         launch(Dispatchers.IO) {
             audioSink.audioFlow.collect { (buffer, _) ->
                 // Calculate the volume to display as bars.
+                LKLog.e { "volume calc" }
                 val volume = (calculateVolume(buffer).coerceIn(MIN_VOLUME, MAX_VOLUME) / MAX_VOLUME).toFloat()
 
                 val middle = NUM_BARS / 2
@@ -60,6 +63,7 @@ fun RemoteAudioTrackBarVisualizer(audioTrackRef: TrackReference?, modifier: Modi
                     amplitudes[middle - i] = curVolume
                     amplitudes[middle + i] = curVolume
                 }
+                LKLog.e { "volume calc end" }
             }
         }
     }

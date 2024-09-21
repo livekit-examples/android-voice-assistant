@@ -12,12 +12,10 @@ import io.livekit.android.example.voiceassistant.audio.AudioFormat
 import io.livekit.android.example.voiceassistant.ui.noise.FFTAudioProcessor
 import io.livekit.android.example.voiceassistant.ui.noise.FFTBarVisualizer
 import io.livekit.android.room.track.RemoteAudioTrack
-import io.livekit.android.util.LKLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import livekit.org.webrtc.AudioTrackSink
 import java.nio.ByteBuffer
@@ -30,18 +28,12 @@ fun FFTRemoteAudioTrackBarVisualizer(
     val audioSink = remember { AudioTrackSinkFlow() }
     val audioProcessor = remember { FFTAudioProcessor() }
     val fft by audioProcessor.fftFlow.collectAsState(initial = 1 to FloatArray(0))
-    LKLog.e { "Recomping ${fft.hashCode()}" }
     DisposableEffect(key1 = audioTrackRef) {
         val track = audioTrackRef?.publication?.track as? RemoteAudioTrack
         track?.addSink(audioSink)
 
         onDispose {
             track?.removeSink(audioSink)
-        }
-    }
-    LaunchedEffect(key1 = Unit) {
-        audioProcessor.fftFlow.collectLatest {
-            LKLog.e { "emission" }
         }
     }
 

@@ -1,4 +1,4 @@
-package io.livekit.android.example.voiceassistant.ui
+package io.livekit.android.example.voiceassistant.ui.visualizer
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box

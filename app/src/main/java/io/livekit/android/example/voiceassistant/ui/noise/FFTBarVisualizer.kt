@@ -42,7 +42,6 @@ import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import io.livekit.android.util.LKLog
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.pow
@@ -77,7 +76,7 @@ fun FFTBarVisualizer(
         .drawWithCache {
             onDrawWithContent {
 
-                LKLog.e { "drawing" }
+                //LKLog.e { "drawing" }
 
                 if (fft.isEmpty()) {
                     return@onDrawWithContent
@@ -132,15 +131,17 @@ fun FFTBarVisualizer(
                     for (i in 0 until smoothingFactor) {
                         smoothedAccum += previousValues[i * BANDS + currentFrequencyBandLimitIndex]
                         if (i != smoothingFactor - 1) {
+                            // Shift over previous values
                             previousValues[i * BANDS + currentFrequencyBandLimitIndex] =
                                 previousValues[(i + 1) * BANDS + currentFrequencyBandLimitIndex]
                         } else {
+                            // Copy current value into last band slot
                             previousValues[i * BANDS + currentFrequencyBandLimitIndex] = accum
                         }
                     }
                     smoothedAccum /= (smoothingFactor + 1) // +1 because it also includes the current value
 
-                    LKLog.e { "smoothedAccum: $smoothedAccum" }
+                    //LKLog.e { "smoothedAccum: $smoothedAccum" }
                     val leftX = size.width * (currentFrequencyBandLimitIndex / BANDS.toFloat())
                     val rightX = leftX + size.width / BANDS.toFloat()
 
@@ -162,7 +163,7 @@ fun FFTBarVisualizer(
                     currentFrequencyBandLimitIndex++
                 }
 
-                LKLog.e { "drawing end" }
+                //LKLog.e { "drawing end" }
             }
         })
 }
