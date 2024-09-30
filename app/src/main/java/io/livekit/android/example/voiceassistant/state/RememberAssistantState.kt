@@ -10,7 +10,7 @@ import io.livekit.android.room.participant.Participant
 import io.livekit.android.util.flow
 import kotlinx.coroutines.flow.collectLatest
 
-private const val VOICE_ASSISTANT_STATE_KEY = "voice_assistant.state"
+const val VOICE_ASSISTANT_STATE_KEY = "voice_assistant.state"
 
 /**
  * Keeps track of the assistant state for a participant.

@@ -24,10 +24,11 @@
  * SOFTWARE.
  */
 
-package io.livekit.android.example.voiceassistant.ui.noise
+package io.livekit.android.example.voiceassistant.ui.vad
 
 import android.media.AudioTrack
 import com.paramsen.noise.Noise
+import io.livekit.android.annotations.Beta
 import io.livekit.android.example.voiceassistant.audio.AudioFormat
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
@@ -37,7 +38,7 @@ import java.nio.ByteOrder
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
 
-
+@Beta
 class FFTAudioAnalyzer {
 
     companion object {

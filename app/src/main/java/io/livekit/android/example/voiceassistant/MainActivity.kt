@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,22 +34,22 @@ import io.livekit.android.compose.state.rememberTracks
 import io.livekit.android.compose.state.transcriptions.rememberParticipantTranscriptions
 import io.livekit.android.compose.state.transcriptions.rememberTranscriptions
 import io.livekit.android.example.voiceassistant.audio.LocalAudioTrackFlow
-import io.livekit.android.example.voiceassistant.state.AssistantState
-import io.livekit.android.example.voiceassistant.state.rememberAssistantState
-import io.livekit.android.example.voiceassistant.ui.FFTRemoteAudioTrackBarVisualizer
+import io.livekit.android.example.voiceassistant.state.VOICE_ASSISTANT_STATE_KEY
 import io.livekit.android.example.voiceassistant.ui.UserTranscription
 import io.livekit.android.example.voiceassistant.ui.theme.LiveKitVoiceAssistantExampleTheme
-import io.livekit.android.example.voiceassistant.ui.visualizer.AndroidVisualizer
+import io.livekit.android.example.voiceassistant.ui.vad.VoiceAssistantBarVisualizer
 import io.livekit.android.room.Room
 import io.livekit.android.room.track.Track
 import io.livekit.android.util.LKLog
 import io.livekit.android.util.LoggingLevel
+import io.livekit.android.util.flow
+import kotlinx.coroutines.flow.map
 import livekit.org.webrtc.audio.JavaAudioDeviceModule
 
 // Replace these values with your url and generated token.
 const val wsURL = "ws://192.168.11.2:7880"
 const val token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjYyMjI2NjIsImlzcyI6IkFQSVRMV3JLOHRid3I0NyIsIm5iZiI6MTcyMzYzMDY2Miwic3ViIjoicGhvbmUiLCJ2aWRlbyI6eyJyb29tIjoibXlyb29tIiwicm9vbUpvaW4iOnRydWV9fQ.61oC0qB3cOxIv-MUp89e05Pelw-G_thqg5G7UMEmAXw"
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjkwMDE0NTAsImlzcyI6IkFQSVRMV3JLOHRid3I0NyIsIm5iZiI6MTcyNjQwOTQ1MCwic3ViIjoicGhvbmUiLCJ2aWRlbyI6eyJyb29tIjoibXlyb29tIiwicm9vbUpvaW4iOnRydWV9fQ.jz4G7mt-0am_2BtQ8INYh2PDctZFDcRyHKOTFG3qu1A"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -123,46 +124,49 @@ fun VoiceAssistant(modifier: Modifier = Modifier) {
             val trackRefs = rememberTracks(sources = listOf(Track.Source.MICROPHONE))
             val remoteTrackRef = trackRefs.firstOrNull { it.participant != room.localParticipant }
 
-            val assistantState = rememberAssistantState(participant = remoteTrackRef?.participant)
+            //val assistantState = rememberAssistantState(participant = remoteTrackRef?.participant)
 
-            // Optionally do something with the assistant state.
-            when (assistantState) {
-                AssistantState.LISTENING -> {}
-                AssistantState.THINKING -> {}
-                AssistantState.SPEAKING -> {}
-                else -> {}
+            val agentState = if (remoteTrackRef != null) {
+                val participant = remoteTrackRef.participant
+                participant::attributes.flow
+                    .map { attributes -> attributes[VOICE_ASSISTANT_STATE_KEY] }
+                    .collectAsState(initial = null)
+            } else {
+                null
             }
 
+//            // Optionally do something with the assistant state.
+//            when (assistantState) {
+//                AssistantState.LISTENING -> {}
+//                AssistantState.THINKING -> {}
+//                AssistantState.SPEAKING -> {}
+//                else -> {}
+//            }
+
             // Amplitude visualization of the Assistant's voice track.
-            FFTRemoteAudioTrackBarVisualizer(
+            VoiceAssistantBarVisualizer(
+                agentState = agentState?.value,
                 audioTrackRef = remoteTrackRef,
                 modifier = Modifier
                     .padding(8.dp)
-                    .fillMaxWidth()
                     .constrainAs(audioVisualizer) {
-
                         top.linkTo(parent.top)
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
-                        height = Dimension.percent(0.1f)
-                        width = Dimension.fillToConstraints
+                        height = Dimension.percent(0.2f)
+                        width = Dimension.preferredValue(300.dp)
                     }
             )
 
-            AndroidVisualizer(
-                audioSessionId = audioSessionId.intValue,
-                modifier = Modifier
-                    .padding(8.dp)
-                    .fillMaxWidth()
-                    .constrainAs(androidVisualizer) {
-                        top.linkTo(audioVisualizer.bottom)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        height = Dimension.percent(0.1f)
-                        width = Dimension.fillToConstraints
-                    }
-            )
-
+            Text(
+                text = agentState?.value ?: "connecting",
+                modifier = Modifier.constrainAs(androidVisualizer) {
+                    top.linkTo(audioVisualizer.bottom)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                    height = Dimension.wrapContent
+                    width = Dimension.wrapContent
+                })
             // Get and display the transcriptions.
             val segments = rememberTranscriptions()
             val localSegments = rememberParticipantTranscriptions(room.localParticipant)

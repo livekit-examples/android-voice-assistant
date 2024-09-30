@@ -1,4 +1,4 @@
-package io.livekit.android.example.voiceassistant.ui.noise
+package io.livekit.android.example.voiceassistant.ui.vad
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -13,8 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Fill
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import io.livekit.android.annotations.Beta
 import io.livekit.android.compose.types.TrackReference
 import io.livekit.android.example.voiceassistant.audio.AudioFormat
 import io.livekit.android.room.track.RemoteAudioTrack
@@ -34,6 +33,7 @@ import kotlin.math.sqrt
  * @param loPass the start index of the FFT samples to use (inclusive). 0 <= loPass < [hiPass].
  * @param hiPass the end index of the FFT samples to use (exclusive). [loPass] < hiPass <= [FFTAudioAnalyzer.SAMPLE_SIZE].
  */
+@Beta
 @Composable
 fun AudioBarVisualizer(
     audioTrackRef: TrackReference?,
@@ -43,8 +43,7 @@ fun AudioBarVisualizer(
     hiPass: Int = 150,
     style: DrawStyle = Fill,
     brush: Brush = SolidColor(Color.Black),
-    radius: Dp = 2.dp,
-    innerSpacing: Dp = 1.dp,
+    alphas: FloatArray? = null,
 ) {
     val audioSink = remember(audioTrackRef) { AudioTrackSinkFlow() }
     val audioProcessor = remember(audioTrackRef) { FFTAudioAnalyzer() }
@@ -95,8 +94,8 @@ fun AudioBarVisualizer(
         modifier = modifier,
         style = style,
         brush = brush,
-        radius = radius,
-        innerSpacing = innerSpacing,
+        minHeight = 0.3f,
+        alphas = alphas,
     )
 }
 
