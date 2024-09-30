@@ -53,10 +53,6 @@ fun AndroidVisualizer(modifier: Modifier = Modifier, audioSessionId: Int) {
                     var currentFrequencyBandLimitIndex = 0
                     val SIZE = fft.size / 2 + 1
                     LKLog.e { "FFT Size: ${fft.size}" }
-                    LKLog.e { "sample rate: ${visualizer?.samplingRate}" }
-                    LKLog.e { "capturesize: ${visualizer?.captureSize}" }
-                    LKLog.e { "measurement: ${visualizer?.measurementMode}" }
-                    LKLog.e { "scalingmode: ${visualizer?.scalingMode}" }
 
                     val n: Int = fft.size
 
@@ -69,7 +65,7 @@ fun AndroidVisualizer(modifier: Modifier = Modifier, audioSessionId: Int) {
 
                     for (k in 1 until n / 2) {
                         val i = k * 2
-                        LKLog.e { "$k: ${fft[i]}, ${fft[i + 1]}" }
+                        //LKLog.e { "android visualizer $k: ${fft[i]}, ${fft[i + 1]}" }
                         magnitudes[k] = hypot(fft[i].toDouble(), fft[i + 1].toDouble()).toFloat()
                         phases[k] = atan2(fft[i + 1].toDouble(), fft[i].toDouble()).toFloat()
                     }

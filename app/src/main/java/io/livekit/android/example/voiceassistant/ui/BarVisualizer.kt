@@ -1,5 +1,6 @@
 package io.livekit.android.example.voiceassistant.ui
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -41,6 +42,7 @@ fun BarVisualizer(
     val _padding = remember(innerPadding) { innerPadding.coerceAtLeast(0.dp) }
     val _radius = remember(radius) { radius.coerceAtLeast(0.dp) }
     val spikesAmplitudes = amplitudes.toMutableList()
+        .map { animateFloatAsState(targetValue = it) }
     Canvas(
         modifier = modifier
     ) {
@@ -52,11 +54,11 @@ fun BarVisualizer(
                 brush = brush,
                 topLeft = Offset(
                     x = index * spikeTotalWidth + _padding.toPx() / 2,
-                    y = size.height * (1 - amplitude) / 2F
+                    y = size.height * (1 - amplitude.value) / 2F
                 ),
                 size = Size(
                     width = spikeWidth,
-                    height = (size.height * amplitude).coerceAtLeast(1.dp.toPx())
+                    height = (size.height * amplitude.value).coerceAtLeast(1.dp.toPx())
                 ),
                 cornerRadius = CornerRadius(_radius.toPx(), _radius.toPx()),
                 style = style

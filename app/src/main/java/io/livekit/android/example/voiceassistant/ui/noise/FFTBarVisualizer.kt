@@ -42,20 +42,23 @@ import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.pow
+import kotlin.math.sqrt
 
 // Taken from: https://en.wikipedia.org/wiki/Preferred_number#Audio_frequencies
-private val FREQUENCY_BAND_LIMITS = arrayOf(
-    20, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630,
-    800, 1000, 1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000, 10000,
-    12500, 16000, 20000
-)
+private val FREQUENCY_BAND_LIMITS = FloatArray(31) { 20000 / 31f * it }
+
+
+//private val FREQUENCY_BAND_LIMITS = arrayOf(
+//    20, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630,
+//    800, 1000, 1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000, 10000,
+//    12500, 16000, 20000
+//)
 
 private val BANDS = FREQUENCY_BAND_LIMITS.size
-private val SIZE = FFTAudioProcessor.SAMPLE_SIZE / 2
-private val maxConst = 25_000 // Reference max value for accum magnitude
+private val SIZE = FFTAudioAnalyzer.SAMPLE_SIZE / 2
+private val maxConst = 1E14 // Reference max value for accum magnitude
 
 @Composable
 fun FFTBarVisualizer(
@@ -76,8 +79,6 @@ fun FFTBarVisualizer(
         .drawWithCache {
             onDrawWithContent {
 
-                //LKLog.e { "drawing" }
-
                 if (fft.isEmpty()) {
                     return@onDrawWithContent
                 }
@@ -87,13 +88,13 @@ fun FFTBarVisualizer(
 
                 // We average out the values over 3 occurences (plus the current one), so big jumps are smoothed out
                 // Iterate over the entire FFT result array
-                while (currentFftPosition < SIZE) {
+                while (currentFftPosition < SIZE && currentFrequencyBandLimitIndex < FREQUENCY_BAND_LIMITS.size) {
                     var accum = 0f
 
                     // We divide the bands by frequency.
                     // Check until which index we need to stop for the current band
                     val nextLimitAtPosition =
-                        floor(FREQUENCY_BAND_LIMITS[currentFrequencyBandLimitIndex] / 20_000.toFloat() * SIZE).toInt()
+                        floor(FREQUENCY_BAND_LIMITS[currentFrequencyBandLimitIndex] / 24000.toFloat() * SIZE).toInt()
 
                     synchronized(fft) {
                         // Here we iterate within this single band
@@ -106,13 +107,14 @@ fun FFTBarVisualizer(
                             val imaginarySq = fft[currentFftPosition + j + 1]
                                 .toDouble()
                                 .pow(2.0)
-                            val raw = (realSq + imaginarySq).toFloat()
+                            val raw = sqrt(realSq + imaginarySq).toFloat()
 
-                            // Hamming window (by frequency band instead of frequency, otherwise it would prefer 10kHz, which is too high)
-                            // The window mutes down the very high and the very low frequencies, usually not hearable by the human ear
-                            val m = BANDS / 2
-                            val windowed = raw * (0.54f - 0.46f * cos(2 * Math.PI * currentFrequencyBandLimitIndex / (m + 1))).toFloat()
-                            accum += windowed
+                            accum += raw
+//                            // Hamming window (by frequency band instead of frequency, otherwise it would prefer 10kHz, which is too high)
+//                            // The window mutes down the very high and the very low frequencies, usually not hearable by the human ear
+//                            val m = BANDS / 2
+//                            val windowed = raw * (0.54f - 0.46f * cos(2 * Math.PI * currentFrequencyBandLimitIndex / (m + 1))).toFloat()
+//                            accum += windowed
                         }
                     }
 
@@ -141,7 +143,6 @@ fun FFTBarVisualizer(
                     }
                     smoothedAccum /= (smoothingFactor + 1) // +1 because it also includes the current value
 
-                    //LKLog.e { "smoothedAccum: $smoothedAccum" }
                     val leftX = size.width * (currentFrequencyBandLimitIndex / BANDS.toFloat())
                     val rightX = leftX + size.width / BANDS.toFloat()
 
@@ -163,7 +164,7 @@ fun FFTBarVisualizer(
                     currentFrequencyBandLimitIndex++
                 }
 
-                //LKLog.e { "drawing end" }
             }
-        })
+        }
+    )
 }

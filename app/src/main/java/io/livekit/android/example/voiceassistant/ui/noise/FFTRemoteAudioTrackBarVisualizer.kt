@@ -9,7 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import io.livekit.android.compose.types.TrackReference
 import io.livekit.android.example.voiceassistant.audio.AudioFormat
-import io.livekit.android.example.voiceassistant.ui.noise.FFTAudioProcessor
+import io.livekit.android.example.voiceassistant.ui.noise.FFTAudioAnalyzer
 import io.livekit.android.example.voiceassistant.ui.noise.FFTBarVisualizer
 import io.livekit.android.room.track.RemoteAudioTrack
 import kotlinx.coroutines.Dispatchers
@@ -26,8 +26,8 @@ fun FFTRemoteAudioTrackBarVisualizer(
     modifier: Modifier = Modifier
 ) {
     val audioSink = remember { AudioTrackSinkFlow() }
-    val audioProcessor = remember { FFTAudioProcessor() }
-    val fft by audioProcessor.fftFlow.collectAsState(initial = 1 to FloatArray(0))
+    val audioProcessor = remember { FFTAudioAnalyzer() }
+    val fft by audioProcessor.fftFlow.collectAsState(FloatArray(0))
     DisposableEffect(key1 = audioTrackRef) {
         val track = audioTrackRef?.publication?.track as? RemoteAudioTrack
         track?.addSink(audioSink)
@@ -51,7 +51,7 @@ fun FFTRemoteAudioTrackBarVisualizer(
         }
     }
 
-    FFTBarVisualizer(fft = fft.second, modifier = modifier)
+    FFTBarVisualizer(fft = fft, modifier = modifier)
 }
 
 class AudioTrackSinkFlow : AudioTrackSink {
